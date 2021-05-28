@@ -1,0 +1,41 @@
+{
+  "threads": 2,
+  "coin": "eth",
+  "name": "ethpool",
+  "pplns": 9000,
+  "coin-name":"eth",
+
+
+	"payouts": {
+		"enabled": false,
+		"requirePeers": 25,
+		"interval": "20m",
+		"daemon": "http://127.0.0.1:8546",
+		"timeout": "10s",
+		"address": "0x6a6ee2d7d06aa9b47b25957ec1e1d8124837ffec",
+		"gas": "21000",
+		"gasPrice": "50000000000",
+		"autoGas": true,
+		"threshold": 50000000,
+		"bgsave": false,
+		"concurrentTx": 10
+	},
+
+  "upstreamCheckInterval": "5s",
+
+  "upstream": [
+    {
+      "name": "main",
+      "url": "http://127.0.0.1:8546",
+      "timeout": "10s"
+    }
+  ],
+
+  "redis": {
+    "endpoint": "127.0.0.1:6379",
+    "poolSize": 10,
+    "database": 1,
+    "password": ""
+  }
+
+}

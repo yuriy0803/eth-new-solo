@@ -1,0 +1,53 @@
+{
+  "threads": 2,
+  "coin": "eth",
+  "name": "ethpool",
+  "pplns": 9000,
+  "coin-name":"eth",
+
+	"api": {
+		"enabled": true,
+		"purgeOnly": false,
+		"purgeInterval": "10m",
+		"listen": "0.0.0.0:8081",
+		"statsCollectInterval": "5s",
+		"hashrateWindow": "30m",
+		"hashrateLargeWindow": "3h",
+		"luckWindow": [64, 128, 256],
+		"payments": 30,
+		"blocks": 50,
+		"poolCharts":"*/20 * * * *",
+		"poolChartsNum":74,
+		"minerCharts":"*/20 * * * *",
+    "minerChartsNum":74,
+    "netCharts":"*/20 * * * *",
+    "netChartsNum":74,
+    "shareCharts":"*/20 * * * *",
+    "shareChartsNum":74
+	},
+
+  "upstreamCheckInterval": "5s",
+
+  "upstream": [
+    {
+      "name": "main",
+      "url": "http://127.0.0.1:8546",
+      "timeout": "10s"
+    }
+  ],
+
+  "redis": {
+    "endpoint": "127.0.0.1:6379",
+    "poolSize": 10,
+    "database": 1,
+    "password": ""
+  },
+  
+         "exchange": {
+                "enabled": true,
+                "url": "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=ethereum",
+                "timeout": "50s",
+                "refreshInterval": "900s"
+    }
+
+}
