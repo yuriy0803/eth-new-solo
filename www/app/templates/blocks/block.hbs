@@ -1,9 +1,9 @@
 <tr>
   <td>
     {{#if block.uncle}}
-      <a href="https://blockscout.com/etc/mainnet/blocks/{{block.uncleHeight}}" rel="nofollow" target="_blank">{{format-number block.height}}</a>
+      <a href="https://etherscan.io/block/{{block.uncleHeight}}" rel="nofollow" target="_blank">{{format-number block.height}}</a>
     {{else}}
-      <a href="https://blockscout.com/etc/mainnet/blocks/{{block.height}}" rel="nofollow" target="_blank">{{format-number block.height}}</a>
+      <a href="https://etherscan.io/block/{{block.height}}" rel="nofollow" target="_blank">{{format-number block.height}}</a>
     {{/if}}
   </td>
   <td>
