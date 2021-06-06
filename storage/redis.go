@@ -541,6 +541,7 @@ func (r *RedisClient) WriteBlock(login, id string, params []string, diff, roundD
 		r.writeShare(tx, ms, ts, login, id, diff, window)
 		tx.HSet(r.formatKey("stats"), "lastBlockFound", strconv.FormatInt(ts, 10))
 		tx.HDel(r.formatKey("stats"), "roundShares")
+    tx.HSet(r.formatKey("miners", login), "roundShares", strconv.FormatInt(0, 10))
 		tx.ZIncrBy(r.formatKey("finders"), 1, login)
 		tx.HIncrBy(r.formatKey("miners", login), "blocksFound", 1)
 		tx.HGetAllMap(r.formatKey("shares", "roundCurrent"))
