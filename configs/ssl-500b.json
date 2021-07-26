@@ -7,13 +7,13 @@
 
 	"proxy": {
 		"enabled": true,
-		"listen": "0.0.0.0:8904",
+		"listen": "0.0.0.0:8911",
 		"limitHeadersSize": 1024,
 		"limitBodySize": 256,
 		"behindReverseProxy": false,
 		"blockRefreshInterval": "120ms",
 		"stateUpdateInterval": "3s",
-		"difficulty": 2000000000,
+		"difficulty": 500000000000,
 		"hashrateExpiration": "3h",
 
 		"healthCheck": true,
@@ -22,7 +22,7 @@
 
 		"stratum": {
 			"enabled": true,
-			"listen": "0.0.0.0:5004",
+			"listen": "0.0.0.0:5011",
 			"timeout": "120s",
 			"maxConn": 8192,
 			"tls": true,
