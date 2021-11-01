@@ -3,8 +3,8 @@ package payouts
 import (
 	"fmt"
 	"log"
-  "os"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -17,23 +17,23 @@ import (
 )
 
 type UnlockerConfig struct {
-	Enabled           bool     `json:"enabled"`
-	PoolFee           float64  `json:"poolFee"`
-	PoolFeeAddress    string   `json:"poolFeeAddress"`
-	Donate            bool     `json:"donate"`
-	Depth             int64    `json:"depth"`
-	ImmatureDepth     int64    `json:"immatureDepth"`
-	KeepTxFees        bool     `json:"keepTxFees"`
-	Interval          string   `json:"interval"`
-	Daemon            string   `json:"daemon"`
-	Timeout           string   `json:"timeout"`
-  Classic        bool    `json:"classic"`
+	Enabled        bool    `json:"enabled"`
+	PoolFee        float64 `json:"poolFee"`
+	PoolFeeAddress string  `json:"poolFeeAddress"`
+	Donate         bool    `json:"donate"`
+	Depth          int64   `json:"depth"`
+	ImmatureDepth  int64   `json:"immatureDepth"`
+	KeepTxFees     bool    `json:"keepTxFees"`
+	Interval       string  `json:"interval"`
+	Daemon         string  `json:"daemon"`
+	Timeout        string  `json:"timeout"`
+	Classic        bool    `json:"classic"`
 }
 
 const minDepth = 16
 const byzantiumHardForkHeight = 4370000
 
-var homesteadReward = math.MustParseBig256("5000000000000000000")
+var homesteadReward = math.MustParseBig256("2000000000000000000")
 var byzantiumReward = math.MustParseBig256("2000000000000000000")
 var classicReward = math.MustParseBig256("3200000000000000000")
 
@@ -257,7 +257,7 @@ func (u *BlockUnlocker) unlockPendingBlocks() {
 		return
 	}
 
-	current, err := u.rpc.GetPendingBlock()
+	current, err := u.rpc.GetLatestBlock()
 	if err != nil {
 		u.halt = true
 		u.lastFail = err
@@ -339,7 +339,7 @@ func (u *BlockUnlocker) unlockPendingBlocks() {
 			entries = append(entries, fmt.Sprintf("\tREWARD %v: %v: %v Shannon", block.RoundKey(), login, reward))
 			per := new(big.Rat)
 			if val, ok := percents[login]; ok {
-					per = val
+				per = val
 			}
 			u.backend.WriteReward(login, reward, per, true, block)
 		}
@@ -360,7 +360,7 @@ func (u *BlockUnlocker) unlockAndCreditMiners() {
 		return
 	}
 
-	current, err := u.rpc.GetPendingBlock()
+	current, err := u.rpc.GetLatestBlock()
 	if err != nil {
 		//u.halt = true
 		u.lastFail = err

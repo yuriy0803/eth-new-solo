@@ -1,5 +1,5 @@
 {
-  "threads": 2,
+  "threads": 12,
   "coin": "eth",
   "name": "ethpoolsolo",
   "pplns": 0,
@@ -7,13 +7,13 @@
 
 	"unlocker": {
 		"enabled": true,
-		"poolFee": 0.1,
+		"poolFee": 1.0,
 		"poolFeeAddress": "",
 		"depth": 120,
 		"immatureDepth": 20,
 		"keepTxFees": false,
 		"interval": "10m",
-		"daemon": "http://127.0.0.1:8546",
+		"daemon": "http://127.0.0.1:8549",
 		"timeout": "10s",
                 "classic": false
 	},
@@ -24,7 +24,7 @@
   "upstream": [
     {
       "name": "main",
-      "url": "http://127.0.0.1:8546",
+      "url": "http://127.0.0.1:8549",
       "timeout": "10s"
     }
   ],

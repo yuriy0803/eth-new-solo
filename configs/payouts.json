@@ -1,5 +1,5 @@
 {
-  "threads": 2,
+  "threads": 12,
   "coin": "eth",
   "name": "ethpoolsolo",
   "pplns": 0,
@@ -10,7 +10,7 @@
 		"enabled": true,
 		"requirePeers": 10,
 		"interval": "20m",
-		"daemon": "http://127.0.0.1:8546",
+		"daemon": "http://127.0.0.1:8549",
 		"timeout": "10s",
 		"address": "0x6a6ee2d7d06aa9b47b25957ec1e1d8124837ffec",
 		"gas": "21000",
@@ -26,7 +26,7 @@
   "upstream": [
     {
       "name": "main",
-      "url": "http://127.0.0.1:8546",
+      "url": "http://127.0.0.1:8549",
       "timeout": "10s"
     }
   ],

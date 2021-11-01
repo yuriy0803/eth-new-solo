@@ -1,5 +1,5 @@
 {
-  "threads": 2,
+  "threads": 12,
   "coin": "eth",
   "name": "ethpoolsolo",
   "pplns": 0,
@@ -31,7 +31,7 @@
   "upstream": [
     {
       "name": "main",
-      "url": "http://127.0.0.1:8546",
+      "url": "http://127.0.0.1:8549",
       "timeout": "10s"
     }
   ],
