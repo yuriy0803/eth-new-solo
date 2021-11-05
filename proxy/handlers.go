@@ -134,7 +134,7 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 	if exist {
 		log.Printf("Duplicate share from %s@%s %v", login, cs.ip, params)
 		if !ok {
-			return false, &ErrorReply{Code: 23, Message: "Duplicate share"}
+			return false, &ErrorReply{Code: 22, Message: "Duplicate share"}
 		}
 		return false, nil
 	}
