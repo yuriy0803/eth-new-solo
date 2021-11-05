@@ -6,8 +6,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
-  "strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -21,12 +21,12 @@ import (
 )
 
 type ProxyServer struct {
-	config             *Config
-	blockTemplate      atomic.Value
-	upstream           int32
-	upstreams          []*rpc.RPCClient
-	backend            *storage.RedisClient
-	diff               string
+	config        *Config
+	blockTemplate atomic.Value
+	upstream      int32
+	upstreams     []*rpc.RPCClient
+	backend       *storage.RedisClient
+	//diff               string
 	policy             *policy.PolicyServer
 	hashrateExpiration time.Duration
 	failsCount         int64
@@ -50,11 +50,14 @@ type Session struct {
 
 	// Stratum
 	sync.Mutex
-	conn  net.Conn
-	login          string
-  lastErr error
-	subscriptionID string
-	JobDeatils     jobDetails
+	conn               net.Conn
+	login              string
+	subscriptionID     string
+	JobDeatils         jobDetails
+	diff               int64
+	nextDiff           int64
+	lastShareDurations []time.Duration
+	lastShareTime      time.Time
 }
 
 func NewProxy(cfg *Config, backend *storage.RedisClient) *ProxyServer {
@@ -64,7 +67,7 @@ func NewProxy(cfg *Config, backend *storage.RedisClient) *ProxyServer {
 	policy := policy.Start(&cfg.Proxy.Policy, backend)
 
 	proxy := &ProxyServer{config: cfg, backend: backend, policy: policy}
-	proxy.diff = util.GetTargetHex(cfg.Proxy.Difficulty)
+	//proxy.diff = util.GetTargetHex(cfg.Proxy.Difficulty)
 
 	proxy.upstreams = make([]*rpc.RPCClient, len(cfg.Upstream))
 	for i, v := range cfg.Upstream {
@@ -124,17 +127,17 @@ func NewProxy(cfg *Config, backend *storage.RedisClient) *ProxyServer {
 					block, _ := rpc.GetBlockByHeight(height)
 					timestamp, _ := strconv.ParseInt(strings.Replace(block.Timestamp, "0x", "", -1), 16, 64)
 					prev := height - 100
-					if (prev < 0) {
+					if prev < 0 {
 						prev = 0
 					}
 					n := height - prev
-					if (n > 0) {
+					if n > 0 {
 						prevblock, err := rpc.GetBlockByHeight(prev)
 						if err != nil || prevblock == nil {
 							log.Fatalf("Error while retrieving block from node: %v", err)
 						} else {
 							prevtime, _ := strconv.ParseInt(strings.Replace(prevblock.Timestamp, "0x", "", -1), 16, 64)
-							blocktime := float64(timestamp - prevtime) / float64(n)
+							blocktime := float64(timestamp-prevtime) / float64(n)
 							err = backend.WriteNodeState(cfg.Name, t.Height, t.Difficulty, blocktime)
 							if err != nil {
 								log.Printf("Failed to write node state to backend: %v", err)

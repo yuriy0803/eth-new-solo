@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"bufio"
-  "crypto/tls"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"io"
@@ -66,7 +66,7 @@ func (s *ProxyServer) ListenTCP() {
 		accept <- n
 		go func(cs *Session) {
 			err = s.handleTCPClient(cs)
-			if err != nil || cs.lastErr != nil {
+			if err != nil {
 				s.removeSession(cs)
 				conn.Close()
 			}
@@ -115,32 +115,32 @@ func (s *ProxyServer) handleTCPClient(cs *Session) error {
 func (cs *Session) handleTCPMessage(s *ProxyServer, req *StratumReq) error {
 	// Handle RPC methods
 	switch req.Method {
-        // claymore -esm 1
-        case "eth_login":
-                var params []string
-                err := json.Unmarshal(req.Params, &params)
-                if err != nil {
-                        log.Println("Malformed stratum request params from", cs.ip)
-                        return err
-                }
-                reply, errReply := s.handleLoginRPC(cs, params, req.Worker)
-                if errReply != nil {
-                        return cs.sendTCPError(req.Id, errReply)
-                }
-                return cs.sendTCPResult(req.Id, reply)
-        // claymore -esm 0
-        case "eth_submitLogin":
-                var params []string
-                err := json.Unmarshal(req.Params, &params)
-                if err != nil {
-                        log.Println("Malformed stratum request params from", cs.ip)
-                        return err
-                }
-                reply, errReply := s.handleLoginRPC(cs, params, req.Worker)
-                if errReply != nil {
-                        return cs.sendTCPError(req.Id, errReply)
-                }
-                return cs.sendTCPResult(req.Id, reply)
+	// claymore -esm 1
+	case "eth_login":
+		var params []string
+		err := json.Unmarshal(req.Params, &params)
+		if err != nil {
+			log.Println("Malformed stratum request params from", cs.ip)
+			return err
+		}
+		reply, errReply := s.handleLoginRPC(cs, params, req.Worker)
+		if errReply != nil {
+			return cs.sendTCPError(req.Id, errReply)
+		}
+		return cs.sendTCPResult(req.Id, reply)
+	// claymore -esm 0
+	case "eth_submitLogin":
+		var params []string
+		err := json.Unmarshal(req.Params, &params)
+		if err != nil {
+			log.Println("Malformed stratum request params from", cs.ip)
+			return err
+		}
+		reply, errReply := s.handleLoginRPC(cs, params, req.Worker)
+		if errReply != nil {
+			return cs.sendTCPError(req.Id, errReply)
+		}
+		return cs.sendTCPResult(req.Id, reply)
 	case "eth_getWork":
 		reply, errReply := s.handleGetWorkRPC(cs)
 		if errReply != nil {
@@ -216,7 +216,7 @@ func (s *ProxyServer) broadcastNewJobs() {
 	if t == nil || len(t.Header) == 0 || s.isSick() {
 		return
 	}
-	reply := []string{t.Header, t.Seed, s.diff}
+	//reply := []string{t.Header, t.Seed, s.diff}
 
 	s.sessionsMu.RLock()
 	defer s.sessionsMu.RUnlock()
@@ -234,6 +234,8 @@ func (s *ProxyServer) broadcastNewJobs() {
 		bcast <- n
 
 		go func(cs *Session) {
+			cs.diff = cs.nextDiff
+			reply := []string{t.Header, t.Seed, util.GetTargetHex(cs.diff)}
 			err := cs.pushNewJob(&reply)
 			<-bcast
 			if err != nil {

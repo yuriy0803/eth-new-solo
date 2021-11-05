@@ -2,8 +2,8 @@ package proxy
 
 import (
 	"github.com/yuriy0803/open-etc-pool-friends/api"
+	"github.com/yuriy0803/open-etc-pool-friends/exchange"
 	"github.com/yuriy0803/open-etc-pool-friends/payouts"
-  "github.com/yuriy0803/open-etc-pool-friends/exchange"
 	"github.com/yuriy0803/open-etc-pool-friends/policy"
 	"github.com/yuriy0803/open-etc-pool-friends/storage"
 )
@@ -17,15 +17,15 @@ type Config struct {
 
 	Threads int `json:"threads"`
 
-	Coin    string         `json:"coin"`
-	Pplns   int64          `json:"pplns"`
-	Redis   storage.Config `json:"redis"`
-  CoinName string         `json:"coin-name"`
+	Coin     string         `json:"coin"`
+	Pplns    int64          `json:"pplns"`
+	Redis    storage.Config `json:"redis"`
+	CoinName string         `json:"coin-name"`
 
 	BlockUnlocker payouts.UnlockerConfig `json:"unlocker"`
 	Payouts       payouts.PayoutsConfig  `json:"payouts"`
- 
-  Exchange exchange.ExchangeConfig `json:"exchange"`
+
+	Exchange exchange.ExchangeConfig `json:"exchange"`
 
 	NewrelicName    string `json:"newrelicName"`
 	NewrelicKey     string `json:"newrelicKey"`
@@ -50,25 +50,25 @@ type Proxy struct {
 	HealthCheck bool  `json:"healthCheck"`
 
 	Stratum Stratum `json:"stratum"`
-
-	StratumNiceHash StratumNiceHash `json:"stratum_nice_hash"`
+	VarDiff VarDiff `json:"varDiff"`
 }
 
 type Stratum struct {
-	Enabled bool   `json:"enabled"`
-	Listen  string `json:"listen"`
-	Timeout string `json:"timeout"`
-	MaxConn int    `json:"maxConn"`
+	Enabled  bool   `json:"enabled"`
+	Listen   string `json:"listen"`
+	Timeout  string `json:"timeout"`
+	MaxConn  int    `json:"maxConn"`
 	TLS      bool   `json:"tls"`
 	CertFile string `json:"certFile"`
 	KeyFile  string `json:"keyFile"`
 }
 
-type StratumNiceHash struct {
-	Enabled bool   `json:"enabled"`
-	Listen  string `json:"listen"`
-	Timeout string `json:"timeout"`
-	MaxConn int    `json:"maxConn"`
+type VarDiff struct {
+	MinDiff         int64   `json:"minDiff"`
+	MaxDiff         int64   `json:"maxDiff"`
+	TargetTime      float64 `json:"targetTime"`
+	VariancePercent int     `json:"variancePercent"`
+	MaxJump         int64   `json:"maxJump"`
 }
 
 type Upstream struct {
