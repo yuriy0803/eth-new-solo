@@ -4,7 +4,6 @@ import (
 	"log"
 	"regexp"
 	"strings"
-        "errors"
 
 	"github.com/yuriy0803/open-etc-pool-friends/rpc"
 	"github.com/yuriy0803/open-etc-pool-friends/util"
@@ -71,30 +70,31 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 		log.Printf("Malformed PoW result from %s@%s %v", login, cs.ip, params)
 		return false, &ErrorReply{Code: -1, Message: "Malformed PoW result"}
 	}
-	go func(s *ProxyServer, cs *Session, login, id string, params []string) {
-		t := s.currentBlockTemplate()
-		exist, validShare := s.processShare(login, id, cs.ip, t, params)
-		ok := s.policy.ApplySharePolicy(cs.ip, !exist && validShare)
+	t := s.currentBlockTemplate()
+	exist, validShare := s.processShare(login, id, cs.ip, t, params)
+	ok := s.policy.ApplySharePolicy(cs.ip, !exist && validShare)
 
-		if exist {
-			log.Printf("Duplicate share from %s@%s %v", login, cs.ip, params)
-			cs.lastErr = errors.New("Duplicate share")
-		}
-
-		if !validShare {
-			log.Printf("Invalid share from %s@%s", login, cs.ip)
-			// Bad shares limit reached, return error and close
-			if !ok {
-				cs.lastErr = errors.New("Invalid share")
-			}
-		}
-		log.Printf("Valid share from %s@%s", login, cs.ip)
-
+	if exist {
+		log.Printf("Duplicate share from %s@%s %v", login, cs.ip, params)
 		if !ok {
-			cs.lastErr = errors.New("High rate of invalid shares")
+			return false, &ErrorReply{Code: 23, Message: "Duplicate share"}
 		}
-   }(s, cs, login, id, params)
+		return false, nil
+	}
 
+	if !validShare {
+		log.Printf("Invalid share from %s@%s", login, cs.ip)
+		// Bad shares limit reached, return error and close
+		if !ok {
+			return false, &ErrorReply{Code: 23, Message: "Invalid share"}
+		}
+		return false, nil
+	}
+	log.Printf("Valid share from %s@%s", login, cs.ip)
+
+	if !ok {
+		return true, &ErrorReply{Code: -1, Message: "High rate of invalid shares"}
+	}
 	return true, nil
 }
 
