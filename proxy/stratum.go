@@ -235,7 +235,7 @@ func (s *ProxyServer) broadcastNewJobs() {
 
 		go func(cs *Session) {
 			cs.diff = cs.nextDiff
-			reply := []string{t.Header, t.Seed, util.GetTargetHex(cs.diff)}
+			reply := []string{t.Header, t.Seed, util.GetTargetHex(cs.diff), util.ToHex(int64(t.Height))}
 			err := cs.pushNewJob(&reply)
 			<-bcast
 			if err != nil {

@@ -45,7 +45,7 @@ func (s *ProxyServer) handleGetWorkRPC(cs *Session) ([]string, *ErrorReply) {
 		return nil, &ErrorReply{Code: 0, Message: "Work not ready"}
 	}
 	cs.diff = cs.nextDiff
-	return []string{t.Header, t.Seed, util.GetTargetHex(cs.diff)}, nil
+	return []string{t.Header, t.Seed, util.GetTargetHex(cs.diff), util.ToHex(int64(t.Height))}, nil
 }
 
 func (s *ProxyServer) calcNewDiff(cs *Session) int64 {
