@@ -35,13 +35,6 @@ type ProxyServer struct {
 	sessionsMu sync.RWMutex
 	sessions   map[*Session]struct{}
 	timeout    time.Duration
-	Extranonce string
-}
-
-type jobDetails struct {
-	JobID      string
-	SeedHash   string
-	HeaderHash string
 }
 
 type Session struct {
@@ -52,8 +45,6 @@ type Session struct {
 	sync.Mutex
 	conn               net.Conn
 	login              string
-	subscriptionID     string
-	JobDeatils         jobDetails
 	diff               int64
 	nextDiff           int64
 	lastShareDurations []time.Duration
