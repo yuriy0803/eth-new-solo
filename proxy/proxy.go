@@ -21,12 +21,12 @@ import (
 )
 
 type ProxyServer struct {
-	config        *Config
-	blockTemplate atomic.Value
-	upstream      int32
-	upstreams     []*rpc.RPCClient
-	backend       *storage.RedisClient
-	//diff               string
+	config             *Config
+	blockTemplate      atomic.Value
+	upstream           int32
+	upstreams          []*rpc.RPCClient
+	backend            *storage.RedisClient
+	diff               string
 	policy             *policy.PolicyServer
 	hashrateExpiration time.Duration
 	failsCount         int64
@@ -58,7 +58,7 @@ func NewProxy(cfg *Config, backend *storage.RedisClient) *ProxyServer {
 	policy := policy.Start(&cfg.Proxy.Policy, backend)
 
 	proxy := &ProxyServer{config: cfg, backend: backend, policy: policy}
-	//proxy.diff = util.GetTargetHex(cfg.Proxy.Difficulty)
+	proxy.diff = util.GetTargetHex(cfg.Proxy.Difficulty)
 
 	proxy.upstreams = make([]*rpc.RPCClient, len(cfg.Upstream))
 	for i, v := range cfg.Upstream {
