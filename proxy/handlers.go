@@ -2,10 +2,8 @@ package proxy
 
 import (
 	"log"
-	"math"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/yuriy0803/open-etc-pool-friends/rpc"
 	"github.com/yuriy0803/open-etc-pool-friends/util"
@@ -44,60 +42,7 @@ func (s *ProxyServer) handleGetWorkRPC(cs *Session) ([]string, *ErrorReply) {
 	if t == nil || len(t.Header) == 0 || s.isSick() {
 		return nil, &ErrorReply{Code: 0, Message: "Work not ready"}
 	}
-	cs.diff = cs.nextDiff
-	return []string{t.Header, t.Seed, util.GetTargetHex(cs.diff), util.ToHex(int64(t.Height))}, nil
-}
-
-func (s *ProxyServer) calcNewDiff(cs *Session) int64 {
-	config := &s.config.Proxy.VarDiff
-
-	now := time.Now()
-
-	if cs.lastShareTime.IsZero() {
-		cs.lastShareTime = now
-		return cs.diff
-	}
-
-	sinceLast := now.Sub(cs.lastShareTime)
-	cs.lastShareTime = now
-
-	cs.lastShareDurations = append(cs.lastShareDurations, sinceLast)
-
-	if len(cs.lastShareDurations) > 5 {
-		cs.lastShareDurations = cs.lastShareDurations[1:]
-	}
-
-	var avg float64
-	for i := 0; i < len(cs.lastShareDurations); i++ {
-		avg += cs.lastShareDurations[i].Seconds()
-	}
-	avg /= float64(len(cs.lastShareDurations))
-
-	variance := float64(config.VariancePercent) / 100.0 * config.TargetTime
-	tMin := config.TargetTime - variance
-	tMax := config.TargetTime + variance
-
-	var direction float64
-	var newDiff int64
-
-	if avg > tMax && cs.diff > config.MinDiff {
-		newDiff = int64(config.TargetTime / avg * float64(cs.diff))
-		newDiff = util.Max(newDiff, config.MinDiff)
-		direction = -1
-	} else if avg < tMin && cs.diff < config.MaxDiff {
-		newDiff = int64(config.TargetTime / avg * float64(cs.diff))
-		newDiff = util.Min(newDiff, config.MaxDiff)
-		direction = 1
-	} else {
-		return cs.diff
-	}
-
-	if math.Abs(float64(newDiff-cs.diff))/float64(cs.diff)*100 > float64(config.MaxJump) {
-		change := int64(float64(config.MaxJump) / 100 * float64(cs.diff) * direction)
-		newDiff = cs.diff + change
-	}
-	cs.lastShareDurations = nil
-	return newDiff
+	return []string{t.Header, t.Seed, s.diff}, nil
 }
 
 // Stratum
@@ -128,13 +73,14 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 		return false, &ErrorReply{Code: -1, Message: "Malformed PoW result"}
 	}
 	t := s.currentBlockTemplate()
-	exist, validShare := s.processShare(login, id, cs.ip, t, params, cs.diff)
+	exist, validShare := s.processShare(login, id, cs.ip, t, params)
 	ok := s.policy.ApplySharePolicy(cs.ip, !exist && validShare)
 
 	if exist {
 		log.Printf("Duplicate share from %s@%s %v", login, cs.ip, params)
+		// see https://github.com/sammy007/open-ethereum-pool/compare/master...nicehashdev:patch-1
 		if !ok {
-			return false, &ErrorReply{Code: 22, Message: "Duplicate share"}
+			return false, &ErrorReply{Code: 23, Message: "Invalid share"}
 		}
 		return false, nil
 	}
@@ -148,8 +94,6 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 		return false, nil
 	}
 	log.Printf("Valid share from %s@%s", login, cs.ip)
-
-	cs.nextDiff = s.calcNewDiff(cs)
 
 	if !ok {
 		return true, &ErrorReply{Code: -1, Message: "High rate of invalid shares"}

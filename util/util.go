@@ -80,17 +80,3 @@ func String2Big(num string) *big.Int {
 	n.SetString(num, 0)
 	return n
 }
-
-func Max(x, y int64) int64 {
-	if x < y {
-		return y
-	}
-	return x
-}
-
-func Min(x, y int64) int64 {
-	if x > y {
-		return y
-	}
-	return x
-}
