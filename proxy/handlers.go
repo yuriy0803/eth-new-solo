@@ -30,8 +30,6 @@ func (s *ProxyServer) handleLoginRPC(cs *Session, params []string, id string) (b
 		return false, &ErrorReply{Code: -1, Message: "You are blacklisted"}
 	}
 	cs.login = login
-	cs.diff = s.config.Proxy.Difficulty
-	cs.nextDiff = cs.diff
 	s.registerSession(cs)
 	log.Printf("Stratum miner connected %v@%v", login, cs.ip)
 	return true, nil
@@ -42,7 +40,7 @@ func (s *ProxyServer) handleGetWorkRPC(cs *Session) ([]string, *ErrorReply) {
 	if t == nil || len(t.Header) == 0 || s.isSick() {
 		return nil, &ErrorReply{Code: 0, Message: "Work not ready"}
 	}
-	return []string{t.Header, t.Seed, s.diff}, nil
+	return []string{t.Header, t.Seed, s.diff, util.ToHex(int64(t.Height))}, nil
 }
 
 // Stratum
@@ -67,13 +65,22 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 		return false, &ErrorReply{Code: -1, Message: "Invalid params"}
 	}
 
+	stratumMode := cs.stratumMode()
+	if stratumMode == NiceHash {
+		for i := 0; i <= 2; i++ {
+			if params[i][0:2] != "0x" {
+				params[i] = "0x" + params[i]
+			}
+		}
+	}
+
 	if !noncePattern.MatchString(params[0]) || !hashPattern.MatchString(params[1]) || !hashPattern.MatchString(params[2]) {
 		s.policy.ApplyMalformedPolicy(cs.ip)
 		log.Printf("Malformed PoW result from %s@%s %v", login, cs.ip, params)
 		return false, &ErrorReply{Code: -1, Message: "Malformed PoW result"}
 	}
 	t := s.currentBlockTemplate()
-	exist, validShare := s.processShare(login, id, cs.ip, t, params)
+	exist, validShare := s.processShare(login, id, cs.ip, t, params, stratumMode != EthProxy)
 	ok := s.policy.ApplySharePolicy(cs.ip, !exist && validShare)
 
 	if exist {
@@ -93,7 +100,9 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 		}
 		return false, nil
 	}
-	log.Printf("Valid share from %s@%s", login, cs.ip)
+	if s.config.Proxy.Debug {
+		log.Printf("Valid share from %s@%s", login, cs.ip)
+	}
 
 	if !ok {
 		return true, &ErrorReply{Code: -1, Message: "High rate of invalid shares"}
