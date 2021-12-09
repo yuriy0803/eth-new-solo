@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -208,7 +209,7 @@ func (cs *Session) handleTCPMessage(s *ProxyServer, req *StratumReq) error {
 		case "mining.authorize":
 			var params []string
 			err := json.Unmarshal(req.Params, &params)
-			if err != nil {
+			if err != nil || len(params) < 1 {
 				return errors.New("invalid params")
 			}
 			splitData := strings.Split(params[0], ".")
@@ -216,7 +217,7 @@ func (cs *Session) handleTCPMessage(s *ProxyServer, req *StratumReq) error {
 			reply, errReply := s.handleLoginRPC(cs, params, req.Worker)
 			if errReply != nil {
 				return cs.sendStratumError(req.Id, []string{
-					string(errReply.Code),
+					fmt.Sprint(errReply.Code),
 					errReply.Message,
 				})
 			}
@@ -237,9 +238,11 @@ func (cs *Session) handleTCPMessage(s *ProxyServer, req *StratumReq) error {
 
 		case "mining.extranonce.subscribe":
 			var params []string
-			err := json.Unmarshal(req.Params, &params)
-			if err != nil {
-				return errors.New("invalid params")
+			if req.Params != nil {
+				err := json.Unmarshal(req.Params, &params)
+				if err != nil {
+					return errors.New("invalid params")
+				}
 			}
 			if len(params) == 0 {
 				if err := cs.sendStratumResult(req.Id, true); err != nil {
@@ -398,10 +401,11 @@ func (cs *Session) pushNewJob(s *ProxyServer, result interface{}) error {
 	defer cs.Unlock()
 
 	if cs.stratumMode() == NiceHash {
+		a := s.currentBlockTemplate()
 		cs.cacheStales(10, 3)
 		t := result.(*[]string)
 		cs.JobDetails = jobDetails{
-			JobID:      randomHex(8),
+			JobID:      randomHex(6),
 			SeedHash:   (*t)[1],
 			HeaderHash: (*t)[0],
 			Height:     (*t)[3],
@@ -411,6 +415,7 @@ func (cs *Session) pushNewJob(s *ProxyServer, result interface{}) error {
 		if cs.JobDetails.SeedHash[0:2] == "0x" {
 			cs.JobDetails.SeedHash = cs.JobDetails.SeedHash[2:]
 			cs.JobDetails.HeaderHash = cs.JobDetails.HeaderHash[2:]
+			cs.JobDetails.Height = cs.JobDetails.Height[2:]
 		}
 
 		resp := JSONStratumReq{
@@ -419,6 +424,7 @@ func (cs *Session) pushNewJob(s *ProxyServer, result interface{}) error {
 				cs.JobDetails.JobID,
 				cs.JobDetails.SeedHash,
 				cs.JobDetails.HeaderHash,
+				cs.JobDetails.Height,
 				// If set to true, then miner needs to clear queue of jobs and immediatelly
 				// start working on new provided job, because all old jobs shares will
 				// result with stale share error.
@@ -428,6 +434,8 @@ func (cs *Session) pushNewJob(s *ProxyServer, result interface{}) error {
 				//
 				// It's undetermined what's more cost-effective
 				false,
+				"Height:", (int64(a.Height)),
+				"Algo: ethash",
 			},
 		}
 		return cs.enc.Encode(&resp)
@@ -497,13 +505,13 @@ func (cs *Session) sendJob(s *ProxyServer, id json.RawMessage, newjob bool) erro
 		reply, errReply := s.handleGetWorkRPC(cs)
 		if errReply != nil {
 			return cs.sendStratumError(id, []string{
-				string(errReply.Code),
+				fmt.Sprint(errReply.Code),
 				errReply.Message,
 			})
 		}
 
 		cs.JobDetails = jobDetails{
-			JobID:      randomHex(8),
+			JobID:      randomHex(6),
 			SeedHash:   reply[1],
 			HeaderHash: reply[0],
 			Height:     reply[3],
@@ -514,8 +522,11 @@ func (cs *Session) sendJob(s *ProxyServer, id json.RawMessage, newjob bool) erro
 		if cs.JobDetails.SeedHash[0:2] == "0x" {
 			cs.JobDetails.SeedHash = cs.JobDetails.SeedHash[2:]
 			cs.JobDetails.HeaderHash = cs.JobDetails.HeaderHash[2:]
+			cs.JobDetails.Height = cs.JobDetails.Height[2:]
 		}
 	}
+
+	t := s.currentBlockTemplate()
 
 	resp := JSONStratumReq{
 		Method: "mining.notify",
@@ -523,7 +534,10 @@ func (cs *Session) sendJob(s *ProxyServer, id json.RawMessage, newjob bool) erro
 			cs.JobDetails.JobID,
 			cs.JobDetails.SeedHash,
 			cs.JobDetails.HeaderHash,
+			cs.JobDetails.Height,
 			true,
+			"Height:", (int64(t.Height)),
+			"Algo: ethash",
 		},
 	}
 
@@ -535,7 +549,7 @@ func (s *ProxyServer) broadcastNewJobs() {
 	if t == nil || len(t.Header) == 0 || s.isSick() {
 		return
 	}
-	reply := []string{t.Header, t.Seed, s.diff, util.ToHex(int64(t.Height))}
+	reply := []string{t.Header, t.Seed, s.diff, util.ToHex(int64(t.Height)), "Height", util.ToHex1(int64(t.Height)), "algo: ethash"}
 
 	s.sessionsMu.RLock()
 	defer s.sessionsMu.RUnlock()

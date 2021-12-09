@@ -48,6 +48,10 @@ func ToHex(n int64) string {
 	return "0x0" + strconv.FormatInt(n, 16)
 }
 
+func ToHex1(n int64) string {
+	return strconv.FormatInt(n, 10)
+}
+
 func FormatReward(reward *big.Int) string {
 	return reward.String()
 }

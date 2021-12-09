@@ -51,6 +51,7 @@ func (s *ProxyServer) processShare(login, id, ip string, t *BlockTemplate, param
 	shareDiffFloat := util.DiffIntToFloat(shareDiffCalc)
 	if shareDiffFloat < 0.0001 {
 		log.Printf("share difficulty too low, %f < %d, from %v@%v", shareDiffFloat, t.Difficulty, login, ip)
+		s.backend.WriteWorkerShareStatus(login, id, false, true, false)
 		return false, false
 	}
 

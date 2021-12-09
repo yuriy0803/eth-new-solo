@@ -506,7 +506,7 @@ func (r *RedisClient) checkPoWExist(height uint64, params []string) (bool, error
 	return val == 0, err
 }
 
-func (r *RedisClient) WriteShare(login, id string, params []string, diff int64, actualDiff int64, height uint64, window time.Duration) (bool, error) {
+func (r *RedisClient) WriteShare(login, id string, params []string, diff int64, shareDiffCalc int64, height uint64, window time.Duration) (bool, error) {
 	exist, err := r.checkPoWExist(height, params)
 	if err != nil {
 		return false, err
@@ -522,14 +522,14 @@ func (r *RedisClient) WriteShare(login, id string, params []string, diff int64, 
 	ts := ms / 1000
 
 	_, err = tx.Exec(func() error {
-		r.writeShare(tx, ms, ts, login, id, diff, actualDiff, window)
+		r.writeShare(tx, ms, ts, login, id, diff, shareDiffCalc, window)
 		tx.HIncrBy(r.formatKey("stats"), "roundShares", diff)
 		return nil
 	})
 	return false, err
 }
 
-func (r *RedisClient) WriteBlock(login, id string, params []string, diff, actualDiff int64, roundDiff int64, height uint64, window time.Duration) (bool, error) {
+func (r *RedisClient) WriteBlock(login, id string, params []string, diff, shareDiffCalc int64, roundDiff int64, height uint64, window time.Duration) (bool, error) {
 	exist, err := r.checkPoWExist(height, params)
 	if err != nil {
 		return false, err
@@ -545,7 +545,7 @@ func (r *RedisClient) WriteBlock(login, id string, params []string, diff, actual
 	ts := ms / 1000
 
 	cmds, err := tx.Exec(func() error {
-		r.writeShare(tx, ms, ts, login, id, diff, actualDiff, window)
+		r.writeShare(tx, ms, ts, login, id, diff, shareDiffCalc, window)
 		tx.HSet(r.formatKey("stats"), "lastBlockFound", strconv.FormatInt(ts, 10))
 		tx.HDel(r.formatKey("stats"), "roundShares")
 		tx.HSet(r.formatKey("miners", login), "roundShares", strconv.FormatInt(0, 10))
@@ -598,7 +598,7 @@ func (r *RedisClient) WriteBlock(login, id string, params []string, diff, actual
 	}
 }
 
-func (r *RedisClient) writeShare(tx *redis.Multi, ms, ts int64, login, id string, diff int64, actualDiff int64, expire time.Duration) {
+func (r *RedisClient) writeShare(tx *redis.Multi, ms, ts int64, login, id string, diff int64, shareDiffCalc int64, expire time.Duration) {
 
 	tx.LPush(r.formatKey("lastshares"), login)
 	tx.LTrim(r.formatKey("lastshares"), 0, r.pplns)
@@ -608,7 +608,7 @@ func (r *RedisClient) writeShare(tx *redis.Multi, ms, ts int64, login, id string
 	tx.ZAdd(r.formatKey("hashrate", login), redis.Z{Score: float64(ts), Member: join(diff, id, ms)})
 	tx.Expire(r.formatKey("hashrate", login), expire) // Will delete hashrates for miners that gone
 	tx.HSet(r.formatKey("miners", login), "lastShare", strconv.FormatInt(ts, 10))
-	tx.HSet(r.formatKey("miners", login), "lastShareDiff", strconv.FormatInt(actualDiff, 10))
+	tx.HSet(r.formatKey("miners", login), "lastShareDiff", strconv.FormatInt(shareDiffCalc, 10))
 }
 
 func (r *RedisClient) WriteBlocksFound(ms, ts int64, login, id, share string, diff int64) {
